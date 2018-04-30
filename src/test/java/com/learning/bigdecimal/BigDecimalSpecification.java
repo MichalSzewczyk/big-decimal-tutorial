@@ -5,8 +5,10 @@ import org.testng.annotations.Test;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.util.function.BiFunction;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertThrows;
 
 /**
  * BigDecimal class in Java gives us the most precise way of representing decimal numbers.
@@ -16,6 +18,56 @@ import static org.testng.Assert.assertEquals;
  * so we have to call methods on each arithmetical operations) than on doubles, however we win greater precision.
  */
 public class BigDecimalSpecification {
+    /**
+     * BigDecimal supports 'fail fast' error policy.
+     * When any operation doesn't have required information to be performed it throws ArithmeticException
+     */
+    @Test
+    void shouldThrowArithmeticExceptionWhenCannotDetermineHowToScale() {
+        // GIVEN
+        BigDecimal bigDecimal = new BigDecimal("0.9");
+
+        // WHEN - THEN
+        assertThrows(() -> bigDecimal.setScale(0));
+    }
+
+    /**
+     * This test aims to show basic arithmetical operations on BigDecimals
+     *
+     * @param leftOperand    - left operand for the operator
+     * @param rightOperand   - right operand for the operator
+     * @param operator       - operator
+     * @param expectedResult - result of operation
+     */
+    @Test(dataProvider = "arithmeticalOperations")
+    void shouldPerformBasicArithmeticalOperations(String leftOperand,
+                                                  String rightOperand,
+                                                  BiFunction<BigDecimal, BigDecimal, BigDecimal> operator,
+                                                  String expectedResult) {
+        // GIVEN
+        BigDecimal leftDecimal = new BigDecimal(leftOperand);
+        BigDecimal rightDecimal = new BigDecimal(rightOperand);
+        BigDecimal expectedDecimal = new BigDecimal(expectedResult);
+
+        // WHEN
+        BigDecimal result = operator.apply(leftDecimal, rightDecimal);
+
+        // THEN
+        assertEquals(result, expectedDecimal);
+    }
+
+    @DataProvider
+    Object[][] arithmeticalOperations() {
+        return new Object[][]{
+                {"10", "10", (BiFunction<BigDecimal, BigDecimal, BigDecimal>) BigDecimal::add, "20"},
+                {"10", "20", (BiFunction<BigDecimal, BigDecimal, BigDecimal>) BigDecimal::subtract, "-10"},
+                {"20", "-10", (BiFunction<BigDecimal, BigDecimal, BigDecimal>) BigDecimal::divide, "-2"},
+                {"-10", "-2", (BiFunction<BigDecimal, BigDecimal, BigDecimal>) BigDecimal::multiply, "20"},
+                {"-2", "-20", (BiFunction<BigDecimal, BigDecimal, BigDecimal>) BigDecimal::max, "-2"},
+                {"-20", "-2", (BiFunction<BigDecimal, BigDecimal, BigDecimal>) BigDecimal::min, "-20"},
+        };
+    }
+
     /**
      * This test aims to compare different rounding modes supported by BigDecimal class
      *
@@ -62,6 +114,4 @@ public class BigDecimalSpecification {
                 {"-10.5000000005", "-10.51", BigDecimal.ROUND_FLOOR, 2},
         };
     }
-
-
 }
